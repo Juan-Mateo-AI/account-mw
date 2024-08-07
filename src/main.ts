@@ -22,7 +22,7 @@ async function bootstrap() {
     }),
   );
 
-  console.log('AuthMS- Testing log');
+  console.log('AccountMW- Testing log here');
 
   await app.listen();
 }
