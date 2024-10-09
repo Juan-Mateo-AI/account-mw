@@ -1,28 +1,49 @@
-import { Controller } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ClientProxy,
+  MessagePattern,
+  RpcException,
+} from '@nestjs/microservices';
+import { NATS_SERVICE } from 'src/config';
 import { LoginUserDto, RegisterUserDto } from './dto';
+import { catchError } from 'rxjs';
+import { AuthGuard } from './guards/auth.guard';
+import { Token, User } from './decorators';
+import { CurrentUser } from './interfaces/current-user.interface';
 
-@Controller()
+@Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
-  /*
-    foo.* matches foo.bar, foo.baz, and so on, but not foo.bar.baz
-    foo.*.bar matches foo.baz.bar, foo.qux.bar, and so on, but not foo.bar or foo.bar.baz
-    foo.> matches foo.bar, foo.bar.baz, and so on
-  */
-  @MessagePattern('auth.register.user')
-  registerUser(@Payload() registerUserDto: RegisterUserDto) {
-    return 'Hola!';
+  constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) {}
+
+  @MessagePattern('account.register.user')
+  registerUser(@Body() registerUserDto: RegisterUserDto) {
+    console.log('middleware register!!');
+    return this.client.send('auth.register.user', registerUserDto).pipe(
+      catchError((error) => {
+        throw new RpcException(error);
+      }),
+    );
   }
 
-  @MessagePattern('auth.login.user')
-  loginUser(@Payload() loginUserDto: LoginUserDto) {
-    return 'Hola!';
+  @MessagePattern('account.login.user')
+  loginUser(@Body() loginUserDto: LoginUserDto) {
+    return this.client.send('auth.login.user', loginUserDto).pipe(
+      catchError((error) => {
+        throw new RpcException(error);
+      }),
+    );
   }
 
-  @MessagePattern('auth.verify.user')
-  verifyToken(@Payload() token: string) {
-    return 'Hola!';
+  @MessagePattern('account.verify.user')
+  verifyToken(@User() user: CurrentUser, @Token() token: string) {
+    return this.client.send('auth.verify.user', {});
   }
 }
