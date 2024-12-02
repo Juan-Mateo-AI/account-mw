@@ -10,4 +10,9 @@ export interface CurrentUser {
     id: string;
     name: string;
   };
+  userRole: {
+    id: string;
+    name: string;
+    isAdmin: boolean;
+  };
 }
