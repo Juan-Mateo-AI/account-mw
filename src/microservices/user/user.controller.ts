@@ -16,40 +16,16 @@ export class UserController {
   async updateUser(
     @Body() { userId, currentUser, userToUpdate }: UpdateUserControllerDto,
   ) {
-    const currentUserToUpdate = await firstValueFrom(
-      this.client.send('users.findOneById', { id: userId }),
+    return this.client
+    .send('users.update', {
+      currentUser,
+      userToUpdate,
+      userId,
+    })
+    .pipe(
+      catchError((error) => {
+        throw new RpcException(error);
+      }),
     );
-
-    if (!currentUserToUpdate) {
-      throw new RpcException({
-        status: 400,
-        message: 'User not found',
-      });
-    }
-
-    if (
-      currentUserToUpdate.id === currentUser.id ||
-      (currentUserToUpdate.companyId === currentUser.company.id &&
-        currentUser.userRole.isAdmin)
-    ) {
-      return this.client
-        .send('users.update', {
-          userToUpdate: {
-            ...currentUserToUpdate,
-            ...userToUpdate,
-            id: userId,
-          },
-        })
-        .pipe(
-          catchError((error) => {
-            throw new RpcException(error);
-          }),
-        );
-    } else {
-      throw new RpcException({
-        status: 403,
-        message: 'Unauthorized',
-      });
-    }
   }
 }
