@@ -5,8 +5,12 @@ import {
   RpcException,
 } from '@nestjs/microservices';
 import { NATS_SERVICE } from 'src/config';
-import { UpdateUserControllerDto } from './dto';
-import { catchError, firstValueFrom } from 'rxjs';
+import {
+  GetAllUsersControllerDto,
+  GetUserControllerDto,
+  UpdateUserControllerDto,
+} from './dto';
+import { catchError } from 'rxjs';
 
 @Controller('user')
 export class UserController {
@@ -17,15 +21,46 @@ export class UserController {
     @Body() { userId, currentUser, userToUpdate }: UpdateUserControllerDto,
   ) {
     return this.client
-    .send('users.update', {
-      currentUser,
-      userToUpdate,
-      userId,
-    })
-    .pipe(
-      catchError((error) => {
-        throw new RpcException(error);
-      }),
-    );
+      .send('users.update', {
+        currentUser,
+        userToUpdate,
+        userId,
+      })
+      .pipe(
+        catchError((error) => {
+          throw new RpcException(error);
+        }),
+      );
+  }
+
+  @MessagePattern('account.user.get')
+  async getUser(@Body() { userId, currentUser }: GetUserControllerDto) {
+    return this.client
+      .send('users.findOneById', {
+        id: userId,
+      })
+      .pipe(
+        catchError((error) => {
+          throw new RpcException(error);
+        }),
+      );
+  }
+
+  @MessagePattern('account.user.getAll')
+  async getAllUsers(
+    @Body()
+    { companyId, page, pageSize, currentUser }: GetAllUsersControllerDto,
+  ) {
+    return this.client
+      .send('users.findAllByCompanyId', {
+        companyId,
+        page,
+        pageSize,
+      })
+      .pipe(
+        catchError((error) => {
+          throw new RpcException(error);
+        }),
+      );
   }
 }
