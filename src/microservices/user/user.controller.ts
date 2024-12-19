@@ -6,11 +6,12 @@ import {
 } from '@nestjs/microservices';
 import { NATS_SERVICE } from 'src/config';
 import {
+  DeleteUserControllerDto,
   GetAllUsersControllerDto,
   GetUserControllerDto,
   UpdateUserControllerDto,
 } from './dto';
-import { catchError } from 'rxjs';
+import { catchError, firstValueFrom } from 'rxjs';
 
 @Controller('user')
 export class UserController {
@@ -56,6 +57,39 @@ export class UserController {
         companyId,
         page,
         pageSize,
+      })
+      .pipe(
+        catchError((error) => {
+          throw new RpcException(error);
+        }),
+      );
+  }
+
+  @MessagePattern('account.user.delete')
+  async deleteUser(
+    @Body()
+    { companyId, userId, currentUser }: DeleteUserControllerDto,
+  ) {
+    const userToDelete = await firstValueFrom(
+      this.client.send('users.findOneById', { id: userId }).pipe(
+        catchError((error) => {
+          throw new RpcException(error);
+        }),
+      ),
+    );
+
+    await firstValueFrom(
+      this.client.send('auth.delete.user', { email: userToDelete.email }).pipe(
+        catchError((error) => {
+          throw new RpcException(error);
+        }),
+      ),
+    );
+
+    return this.client
+      .send('users.delete', {
+        userId,
+        companyId,
       })
       .pipe(
         catchError((error) => {
