@@ -2,19 +2,27 @@ import { Body, Controller, Inject, Request } from '@nestjs/common';
 import {
   ClientProxy,
   MessagePattern,
+  Payload,
   RpcException,
 } from '@nestjs/microservices';
 import { NATS_SERVICE } from 'src/config';
-import { LoginUserDto } from './dto';
+import { LoginUserDto, RegisterUserDto } from './dto';
 import { catchError, firstValueFrom } from 'rxjs';
-import { UserToCreateDto } from './dto/user-to-create';
+import { AuthService } from './auth.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) {}
+  constructor(
+    @Inject(NATS_SERVICE) private readonly client: ClientProxy,
+    private readonly authService: AuthService,
+  ) {}
 
   @MessagePattern('account.register.user')
-  async registerUser(@Body() userToCreate: UserToCreateDto) {
+  async registerUser(
+    @Payload() { userToCreate, currentUser }: RegisterUserDto,
+  ) {
+    await this.authService.authorizeRegisterUser(currentUser);
+
     const user = await firstValueFrom(
       this.client
         .send('users.create', { ...userToCreate, password: undefined })

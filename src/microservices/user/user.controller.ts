@@ -12,15 +12,21 @@ import {
   UpdateUserControllerDto,
 } from './dto';
 import { catchError, firstValueFrom } from 'rxjs';
+import { UserService } from './user.service';
 
 @Controller('user')
 export class UserController {
-  constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) {}
+  constructor(
+    @Inject(NATS_SERVICE) private readonly client: ClientProxy,
+    private readonly userService: UserService,
+  ) {}
 
   @MessagePattern('account.user.update')
   async updateUser(
     @Body() { userId, currentUser, userToUpdate }: UpdateUserControllerDto,
   ) {
+    await this.userService.authorizeUpdateUser(userId, currentUser);
+
     return this.client
       .send('users.update', {
         currentUser,
@@ -77,6 +83,15 @@ export class UserController {
         }),
       ),
     );
+
+    if (!userToDelete) {
+      throw new RpcException({
+        status: 404,
+        message: 'User not found',
+      });
+    }
+
+    await this.userService.authorizeDeleteUser(userToDelete, currentUser);
 
     await firstValueFrom(
       this.client.send('auth.delete.user', { email: userToDelete.email }).pipe(
