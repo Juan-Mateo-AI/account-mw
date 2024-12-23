@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { CurrentUser, User } from '../../interfaces';
 import { AGENT, SUPER_ADMIN } from '../../constants';
@@ -15,7 +15,7 @@ export class UserService {
       currentUser.id !== userIdOfUserToUpdate
     ) {
       throw new RpcException({
-        status: 401,
+        status: HttpStatus.UNAUTHORIZED,
         message: 'Non admin users cannot update users',
       });
     }
@@ -27,21 +27,21 @@ export class UserService {
       !currentUser?.userRole?.isAdmin
     ) {
       throw new RpcException({
-        status: 401,
+        status: HttpStatus.UNAUTHORIZED,
         message: 'Non admin users cannot delete users',
       });
     }
 
     if (userToDelete.userRole.name === SUPER_ADMIN) {
       throw new RpcException({
-        status: 401,
+        status: HttpStatus.UNAUTHORIZED,
         message: 'Super Admins cannot be deleted',
       });
     }
 
     if (userToDelete.id === currentUser.id) {
       throw new RpcException({
-        status: 401,
+        status: HttpStatus.UNAUTHORIZED,
         message: 'You cannot delete yourself',
       });
     }

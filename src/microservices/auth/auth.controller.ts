@@ -1,4 +1,4 @@
-import { Body, Controller, Inject, Request } from '@nestjs/common';
+import { Body, Controller, Inject } from '@nestjs/common';
 import {
   ClientProxy,
   MessagePattern,

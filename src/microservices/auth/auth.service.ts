@@ -1,8 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { CurrentUser } from '../../interfaces';
-import { UserToCreateDto } from './dto/user-to-create';
-import { AGENT, SUPER_ADMIN } from '../../constants';
+import { AGENT } from '../../constants';
 
 @Injectable()
 export class AuthService {
@@ -12,7 +11,7 @@ export class AuthService {
       !currentUser?.userRole?.isAdmin
     ) {
       throw new RpcException({
-        status: 401,
+        status: HttpStatus.UNAUTHORIZED,
         message: 'Non admin users cannot create new users',
       });
     }

@@ -1,4 +1,4 @@
-import { IsDefined, IsNumber, IsOptional, IsUUID } from 'class-validator';
+import { IsDefined, IsOptional, IsUUID } from 'class-validator';
 import { CurrentUser } from '../../../interfaces';
 
 export class DeleteUserControllerDto {
