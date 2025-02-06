@@ -112,4 +112,22 @@ export class UserController {
         }),
       );
   }
+
+  @MessagePattern('account.user.invite')
+  async inviteUser(
+    @Body()
+    { currentUser, userToInvite },
+  ) {
+    return this.client
+      .send('users.invite', {
+        currentUser,
+        userToInvite,
+      })
+      .pipe(
+        catchError((error) => {
+          console.log('error MW', error);
+          throw new RpcException(error);
+        }),
+      );
+  }
 }
