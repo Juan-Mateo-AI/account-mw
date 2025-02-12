@@ -6,6 +6,7 @@ import {
 } from '@nestjs/microservices';
 import { NATS_SERVICE } from 'src/config';
 import {
+  ActivateUserDto,
   DeleteUserControllerDto,
   GetAllUsersControllerDto,
   GetUserControllerDto,
@@ -13,6 +14,7 @@ import {
 } from './dto';
 import { catchError, firstValueFrom } from 'rxjs';
 import { UserService } from './user.service';
+import { ValidateTokenControllerDto } from './dto/validate-token-controller.dto';
 
 @Controller('user')
 export class UserController {
@@ -20,6 +22,20 @@ export class UserController {
     @Inject(NATS_SERVICE) private readonly client: ClientProxy,
     private readonly userService: UserService,
   ) {}
+
+  @MessagePattern('account.user.token.validate')
+  async validateToken(@Body() { type, token }: ValidateTokenControllerDto) {
+    return this.client
+      .send('tokens.validate', {
+        type,
+        token,
+      })
+      .pipe(
+        catchError((error) => {
+          throw new RpcException(error);
+        }),
+      );
+  }
 
   @MessagePattern('account.user.update')
   async updateUser(
@@ -126,6 +142,36 @@ export class UserController {
       .pipe(
         catchError((error) => {
           console.log('error MW', error);
+          throw new RpcException(error);
+        }),
+      );
+  }
+
+  @MessagePattern('account.user.activate')
+  async activateUser(@Body() { password, token }: ActivateUserDto) {
+    const user = await firstValueFrom(
+      this.client.send('tokens.expireAndGetUser', { token }).pipe(
+        catchError((error) => {
+          throw new RpcException(error);
+        }),
+      ),
+    );
+
+    if (!user) {
+      throw new RpcException({
+        status: 404,
+        message: 'User not found',
+      });
+    }
+
+    return this.client
+      .send('auth.register.user', {
+        name: user.name,
+        email: user.email,
+        password: password,
+      })
+      .pipe(
+        catchError((error) => {
           throw new RpcException(error);
         }),
       );
