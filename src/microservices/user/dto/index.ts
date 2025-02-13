@@ -6,3 +6,5 @@ export * from './get-all-users-controller.dto';
 export * from './delete-user-controller.dto';
 export * from './invite-user.dto';
 export * from './activate-user.dto';
+export * from './forgot-password.dto';
+export * from './reset-password.dto';

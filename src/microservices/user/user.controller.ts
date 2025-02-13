@@ -8,8 +8,10 @@ import { NATS_SERVICE } from 'src/config';
 import {
   ActivateUserDto,
   DeleteUserControllerDto,
+  ForgotPasswordDto,
   GetAllUsersControllerDto,
   GetUserControllerDto,
+  ResetPasswordDto,
   UpdateUserControllerDto,
 } from './dto';
 import { catchError, firstValueFrom } from 'rxjs';
@@ -141,7 +143,6 @@ export class UserController {
       })
       .pipe(
         catchError((error) => {
-          console.log('error MW', error);
           throw new RpcException(error);
         }),
       );
@@ -175,5 +176,23 @@ export class UserController {
           throw new RpcException(error);
         }),
       );
+  }
+
+  @MessagePattern('account.user.forgotPassword')
+  async forgotPassword(@Body() { email }: ForgotPasswordDto) {
+    return this.client
+      .send('users.forgotPassword', {
+        email,
+      })
+      .pipe(
+        catchError((error) => {
+          throw new RpcException(error);
+        }),
+      );
+  }
+
+  @MessagePattern('account.user.resetPassword')
+  async resetPassword(@Body() { token, password }: ResetPasswordDto) {
+    return this.client.send('users.resetPassword', { token, password });
   }
 }
